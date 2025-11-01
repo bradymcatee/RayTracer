@@ -20,9 +20,11 @@ class camera{
 
     double defocus_angle = 0; // variation angle of rays through each pixel
     double focus_dist = 10; // distance from camera lookfrom point to plane of perfect focus
+    mutable std::uint64_t rays_traced = 0;
 
     void render(const hittable& world) {
       initialize();
+      rays_traced = 0;
 
       std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
 
@@ -88,8 +90,8 @@ class camera{
 
       //calculate the camera defocus disk basis vectors
       auto defocus_radius = focus_dist * tan(degrees_to_radians(defocus_angle / 2));
-      vec3 defocus_disk_u = u * defocus_radius; 
-      vec3 defocus_disk_v = v * defocus_radius; 
+      defocus_disk_u = u * defocus_radius;
+      defocus_disk_v = v * defocus_radius;
 
     }
 
@@ -120,6 +122,7 @@ class camera{
     }
 
     color ray_color(const ray& r, int depth, const hittable& world) const {
+      ++rays_traced;
       if (depth <= 0)
         return color(0,0,0);
 

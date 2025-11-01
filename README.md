@@ -10,16 +10,30 @@ A compact CPU ray tracer written in modern C++ (single-file main + headers) that
 - Outputs P3 PPM image
 
 ## Build
-Requires a C++11/14/17-capable compiler. From the repository root:
+Option A: CMake
 
-g++ -std=c++17 -O2 main.cpp -o raytracer
+mkdir -p build && cd build && cmake .. && cmake --build . --config Release
 
-(If your toolchain prefers clang: replace `g++` with `clang++`.)
+Option B: One-shot compile
+
+g++ -std=c++17 -O3 -DNDEBUG main.cpp -o raytracer
+
+(Use clang++ if preferred.)
 
 ## Run
 Run and redirect output to a PPM file:
 
 ./raytracer > image.ppm
+
+CLI options:
+- --width <int>    image width in pixels (default 1200)
+- --height <int>   image height; if set, overrides aspect ratio
+- --spp <int>      samples per pixel (default 500)
+- --bounces <int>  max path depth (default 50)
+- --vfov <deg>     vertical field of view (default 20)
+- --defocus <deg>  lens defocus angle (default 0.6)
+- --focus <dist>   focus distance (default 10)
+- --seed <n|random> RNG seed (default 1337; use "random" for non-deterministic)
 
 Open `image.ppm` with an image viewer that supports PPM or convert it with ImageMagick:
 

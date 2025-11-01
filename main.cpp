@@ -1,4 +1,5 @@
 #include "rt.h"
+#include <chrono>
 
 
 #include "camera.h"
@@ -7,7 +8,7 @@
 #include "material.h"
 #include "sphere.h"
 
-int main() {
+int main(int argc, char* argv[]) {
   hittable_list world;
 
   auto ground_material = make_shared<lambertian>(color(0.5, 0.5, 0.5));
@@ -52,18 +53,47 @@ int main() {
 
   camera cam;
 
-  cam.aspect_ratio      = 16.0 / 9.0;
-  cam.image_width       = 1200;
-  cam.samples_per_pixel = 500;
-  cam.max_depth         = 50;
+  // CLI defaults and parsing
+  uint64_t seed = 1337;
+  int width = 1200;
+  int height = 0;
+  int spp = 500;
+  int bounces = 50;
+  double vfov = 20;
+  double defocus = 0.6;
+  double focus = 10.0;
+  for (int i = 1; i < argc; ++i) {
+    const char* arg = argv[i];
+    auto next = [&](void) -> const char* { return (i+1 < argc) ? argv[++i] : nullptr; };
+    if (strcmp(arg, "--width") == 0) { const char* v = next(); if (v) width = atoi(v); }
+    else if (strcmp(arg, "--height") == 0) { const char* v = next(); if (v) height = atoi(v); }
+    else if (strcmp(arg, "--spp") == 0) { const char* v = next(); if (v) spp = atoi(v); }
+    else if (strcmp(arg, "--bounces") == 0) { const char* v = next(); if (v) bounces = atoi(v); }
+    else if (strcmp(arg, "--vfov") == 0) { const char* v = next(); if (v) vfov = atof(v); }
+    else if (strcmp(arg, "--defocus") == 0) { const char* v = next(); if (v) defocus = atof(v); }
+    else if (strcmp(arg, "--focus") == 0) { const char* v = next(); if (v) focus = atof(v); }
+    else if (strcmp(arg, "--seed") == 0) { const char* v = next(); if (v) { if (strcmp(v, "random") == 0) seed = non_deterministic_seed(); else seed = strtoull(v, nullptr, 10); } }
+  }
+  seed_rng(seed);
 
-  cam.vfov     = 20;
+  cam.aspect_ratio      = (height > 0) ? (double(width) / double(height)) : (16.0 / 9.0);
+  cam.image_width       = width;
+  cam.samples_per_pixel = spp;
+  cam.max_depth         = bounces;
+
+  cam.vfov     = vfov;
   cam.lookfrom = point3(13,2,3);
   cam.lookat   = point3(0,0,0);
   cam.vup      = vec3(0,1,0);
 
-  cam.defocus_angle = 0.6;
-  cam.focus_dist    = 10.0;
+  cam.defocus_angle = defocus;
+  cam.focus_dist    = focus;
 
+  auto t0 = std::chrono::steady_clock::now();
   cam.render(world);
+  auto t1 = std::chrono::steady_clock::now();
+  double secs = std::chrono::duration<double>(t1 - t0).count();
+  unsigned long long rays = cam.rays_traced;
+  double rps = (secs > 0.0) ? (double(rays) / secs) : 0.0;
+  std::clog << "Elapsed: " << secs << " s, Rays: " << rays << ", Rays/sec: " << rps << "\n";
 }
