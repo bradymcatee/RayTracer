@@ -16,7 +16,9 @@ mkdir -p build && cd build && cmake .. && cmake --build . --config Release
 
 Option B: One-shot compile
 
-g++ -std=c++17 -O3 -DNDEBUG main.cpp -o raytracer
+g++ -std=c++17 -O3 -DNDEBUG -fopenmp main.cpp -o raytracer
+# Clang (if installed):
+# clang++ -std=c++17 -O3 -DNDEBUG -fopenmp=libomp -lomp main.cpp -o raytracer
 
 (Use clang++ if preferred.)
 
@@ -24,6 +26,8 @@ g++ -std=c++17 -O3 -DNDEBUG main.cpp -o raytracer
 Run and redirect output to a PPM file:
 
 ./raytracer > image.ppm
+# With OpenMP parallelism (example with 8 threads):
+OMP_NUM_THREADS=8 ./raytracer --width 800 --height 450 --spp 50 --bounces 10 > image.ppm
 
 CLI options:
 - --width <int>    image width in pixels (default 1200)
@@ -34,6 +38,9 @@ CLI options:
 - --defocus <deg>  lens defocus angle (default 0.6)
 - --focus <dist>   focus distance (default 10)
 - --seed <n|random> RNG seed (default 1337; use "random" for non-deterministic)
+
+Timing
+The renderer prints elapsed time, total rays, and rays/sec to stderr.
 
 Open `image.ppm` with an image viewer that supports PPM or convert it with ImageMagick:
 

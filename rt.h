@@ -9,6 +9,9 @@
 #include <random>
 #include <cstdint>
 #include <cstring>
+#include <omp.h>
+#include <vector>
+#include <atomic>
 
 
 // C++ Std Usings

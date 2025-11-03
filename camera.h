@@ -20,29 +20,36 @@ class camera{
 
     double defocus_angle = 0; // variation angle of rays through each pixel
     double focus_dist = 10; // distance from camera lookfrom point to plane of perfect focus
-    mutable std::uint64_t rays_traced = 0;
+    mutable std::atomic<uint64_t> rays_traced{0};
 
     void render(const hittable& world) {
       initialize();
       rays_traced = 0;
+      std::vector<color> fb(image_width * image_height);
+      std::atomic<int> rows_done{0};
 
-      std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
+#pragma omp parallel
+      {
+#pragma omp for schedule(static)
+        for (int j = 0; j < image_height; j++){
+          rows_done.fetch_add(1, std::memory_order_relaxed);
+          if (omp_get_thread_num() == 0)
+            std::clog << "\rScanlines remaining: " << (image_height - j) << ' ' << std::flush;
+          for (int i = 0; i < image_width; i++){
+            color pixel_color(0,0,0);
+            for (int sample = 0; sample < samples_per_pixel; sample++){
+              ray r = get_ray(i, j);
+              pixel_color += ray_color(r, max_depth, world);
 
-      for (int j = 0; j < image_height; j++){
-        std::clog << "\rScanlines remaining: " << (image_height - j) << ' ' << std::flush;
-        for (int i = 0; i < image_width; i++){
-          color pixel_color(0,0,0);
-          for (int sample = 0; sample < samples_per_pixel; sample++){
-            ray r = get_ray(i, j);
-            pixel_color += ray_color(r, max_depth, world);
-
+            }
+            fb[j * image_width + i] = pixel_color * pixel_samples_scale;
           }
-          write_color(std::cout, pixel_samples_scale * pixel_color);
         }
       }
-
-      std::clog << "\rDone.				\n";
-
+      std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
+      for (int j = 0; j < image_height; j++)
+        for (int i = 0; i < image_width; i++)
+          write_color(std::cout, fb[j * image_width + i]);
     }
 
   private:

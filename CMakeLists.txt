@@ -6,3 +6,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 add_executable(raytracer main.cpp)
 
 target_compile_options(raytracer PRIVATE -O3 -Wall -Wextra -pedantic)
+
+find_package(OpenMP REQUIRED)
+target_link_libraries(raytracer PRIVATE OpenMP::OpenMP_CXX)
